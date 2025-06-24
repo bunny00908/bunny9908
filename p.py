@@ -19,7 +19,7 @@ def load_cookie_dicts_from_files():
     """Load all cookie dictionaries from cookies_*.txt files in this folder."""
     cookie_dicts = []
     # Look for both your provided filenames
-    filenames = ["cookies_1-1 (1).txt", "cookies_1-2.txt"]
+    filenames = ["cookies_1-1.txt", "cookies_1-2.txt"]
     for fname in filenames:
         if os.path.isfile(fname):
             with open(fname, "r", encoding="utf-8") as f:
