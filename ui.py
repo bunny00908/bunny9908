@@ -25,7 +25,7 @@ def setup_ui_handlers(bot, AUTHORIZED_USERS, save_auth, is_authorized):
         )
         kb.add(InlineKeyboardButton("Close", callback_data="close"))
 
-        with open('anime_start.jpg', 'rb') as photo:
+        with open('6b08ab9dc9f305652657a5aead75742e.jpg', 'rb') as photo:
             bot.send_photo(
                 msg.chat.id,
                 photo,
