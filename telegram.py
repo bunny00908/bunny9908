@@ -10,6 +10,7 @@ import bin as bin_lookup
 import fake
 import scr
 import status
+import imggen  # Your image generation module
 
 # --- UI/menus ---
 AUTHORIZED_USERS = {}
@@ -17,19 +18,10 @@ def save_auth(data): pass
 def is_authorized(user_id): return True
 
 setup_ui_handlers(bot, AUTHORIZED_USERS, save_auth, is_authorized)
+imggen.register_imggen_handlers(bot)  # Register image generation handlers
 
 # --- Main command handlers ---
 
-# Remove old /chk and /mchk handlers
-# @bot.message_handler(commands=['chk'])
-# def handle_chk_command(message):
-#     chk.handle_chk(bot, message)
-
-# @bot.message_handler(commands=['mchk'])
-# def handle_mchk_command(message):
-#     chk.handle_mchk(bot, message)
-
-# Add new /b3 and /mb3 handlers with new UI
 @bot.message_handler(commands=['b3'])
 def handle_b3_command(message):
     b3.handle_b3(bot, message)
@@ -38,11 +30,8 @@ def handle_b3_command(message):
 def handle_mb3_command(message):
     b3.handle_mb3(bot, message)
 
-# Keep /chktxt if you want file card checking (using chk.py or adapt to b3)
 @bot.message_handler(commands=['chktxt'], content_types=['document'])
 def handle_chktxt_command(message):
-    # Use chk or b3 handler depending on your implementation
-    # For now, keeping chk's handler for file input
     import chk
     chk.handle_chktxt(bot, message)
 
