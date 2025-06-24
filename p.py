@@ -1,4 +1,3 @@
-# p.py
 import requests
 import re
 import base64
@@ -9,12 +8,81 @@ import json
 import random
 import urllib3
 import glob
+import os
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 SELECTED_COOKIE_PAIR = None
+ALL_COOKIE_PAIRS = []
 user = generate_user_agent()
 
-# ... [unchanged code above] ...
+def load_cookie_dicts_from_files():
+    """Load all cookie dictionaries from cookies_*.txt files in this folder."""
+    cookie_dicts = []
+    # Look for both your provided filenames
+    filenames = ["cookies_1-1 (1).txt", "cookies_1-2.txt"]
+    for fname in filenames:
+        if os.path.isfile(fname):
+            with open(fname, "r", encoding="utf-8") as f:
+                text = f.read()
+                match = re.search(r'cookies\s*=\s*({.*?})\s*$', text, re.DOTALL)
+                if match:
+                    cookie_str = match.group(1)
+                    try:
+                        cookie_dict = eval(cookie_str, {"__builtins__": {}})
+                        cookie_dicts.append(cookie_dict)
+                    except Exception as e:
+                        print(f"Failed to parse cookies in {fname}: {e}")
+    return cookie_dicts
+
+def select_new_cookie_pair_silent():
+    """Randomly selects a cookie pair from all loaded cookies."""
+    global SELECTED_COOKIE_PAIR, ALL_COOKIE_PAIRS
+    if not ALL_COOKIE_PAIRS:
+        ALL_COOKIE_PAIRS = load_cookie_dicts_from_files()
+    if not ALL_COOKIE_PAIRS:
+        raise RuntimeError("No cookies loaded!")
+    SELECTED_COOKIE_PAIR = random.choice(ALL_COOKIE_PAIRS)
+
+def get_cookies_2():
+    """Returns the currently selected cookie pair for requests."""
+    if SELECTED_COOKIE_PAIR is None:
+        select_new_cookie_pair_silent()
+    return SELECTED_COOKIE_PAIR
+
+def get_domain_url():
+    # You can customize this as needed
+    return "https://www.calipercovers.com"
+
+def get_headers():
+    return {
+        'user-agent': user,
+        # ... add other headers as needed ...
+    }
+
+def get_new_auth():
+    # TODO: Implement logic to obtain nonce and auth token
+    return "fake_nonce", "fake_au"
+
+def get_random_proxy():
+    # TODO: Implement if needed, else return None
+    return None
+
+def check_status(message):
+    # TODO: Parse message and return status, reason, approved flag
+    if "success" in message.lower():
+        return "APPROVED", "Success", True
+    return "DECLINED", message, False
+
+def get_bin_info(bin_code):
+    # TODO: Lookup BIN info, stub for now
+    return {
+        "brand": "VISA",
+        "type": "DEBIT",
+        "level": "CLASSIC",
+        "bank": "Test Bank",
+        "country": "US",
+        "emoji": "🇺🇸",
+    }
 
 def check_card(cc_line):
     select_new_cookie_pair_silent()
@@ -113,7 +181,6 @@ def check_card(cc_line):
         status, reason, approved = check_status(message)
         bin_info = get_bin_info(n[:6]) or {}
 
-        # New UI format (for bot):
         result = (
             f"{'✅' if approved else '❌'} <b>{status}</b>\n"
             f"<code>{n}|{mm}|{yy}|{cvc}</code>\n"
@@ -127,7 +194,6 @@ def check_card(cc_line):
             "━━━━━━━━━━━━━━━━━━━━━━\n"
             "Bot By: 𝗕𝗨𝗡𝗡𝗬 <a href='https://t.me/bunny2050'>@bunny2050</a>"
         )
-        # The return contains ALL needed info as text, but we'll parse in chk.py for UI
         return result
 
     except Exception as e:
@@ -139,10 +205,7 @@ def check_card(cc_line):
             "Bot By: 𝗕𝗨𝗡𝗡𝗬 <a href='https://t.me/bunny2050'>@bunny2050</a>"
         )
 
-# --- UI Helper for chk.py ---
-
 def parse_check_card_result(result_text, default_card="", default_time=""):
-    # Extract info from result text, fallback to unknown if missing
     import re
     card = default_card
     status_key = "declined"
@@ -159,29 +222,23 @@ def parse_check_card_result(result_text, default_card="", default_time=""):
         status_key = "declined"
     elif "INSUFFICIENT FUNDS" in result_text.upper():
         status_key = "insufficient_funds"
-    # Get response reason line
     match_resp = re.search(r"<b>Response:</b>\s?(.*?)\n", result_text)
     if match_resp:
         response = match_resp.group(1).strip()
-    # Get BIN info line
     match_bin = re.search(r"<b>BIN Info:</b>\s?(.*?)\n", result_text)
     if match_bin:
         card_type = match_bin.group(1).strip()
-    # Bank
     match_bank = re.search(r"<b>Bank:</b>\s?(.*?)\n", result_text)
     if match_bank:
         bank = match_bank.group(1).strip()
-    # Country
     match_country = re.search(r"<b>Country:</b>\s?(.*?)\n", result_text)
     if match_country:
         country_flag = match_country.group(1).strip()
-    # BIN (get from card number or from BIN info)
     match_card = re.search(r"<code>(\d{6})", result_text)
     if match_card:
         bin_code = match_card.group(1)
     if not card and match_card:
         card = match_card.group(0)
-    # Time
     match_time = re.search(r"<b>Time:</b>\s?([\d\.]+s)", result_text)
     if match_time:
         check_time = match_time.group(1)
